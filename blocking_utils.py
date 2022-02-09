@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 def topK_neighbors_to_candidate_set(topK_neighbors):
     #We create a data frame corresponding to topK neighbors.
@@ -12,6 +13,11 @@ def topK_neighbors_to_candidate_set(topK_neighbors):
     candidate_set_df = melted_df[["ltable_id", "rtable_id"]]
     return candidate_set_df
 
+def thresholded_pairs_to_candidate_set(thresholded_pairs):
+    # Merge record pair arrays to create DataFrame of candidate pairs
+    merged_arr = np.vstack((thresholded_pairs[0], thresholded_pairs[1])).T
+    candidate_set_df = pd.DataFrame(merged_arr, columns=["ltable_id", "rtable_id"])
+    return candidate_set_df
 
 #This accepts four inputs:
 # data frames for candidate set and ground truth matches
@@ -19,18 +25,52 @@ def topK_neighbors_to_candidate_set(topK_neighbors):
 def compute_blocking_statistics(candidate_set_df, golden_df, left_df, right_df):
     #Now we have two data frames with two columns ltable_id and rtable_id
     # If we do an equi-join of these two data frames, we will get the matches that were in the top-K
+
     merged_df = pd.merge(candidate_set_df, golden_df, on=['ltable_id', 'rtable_id'])
+    # Added to calculate total false positives
+    false_pos = candidate_set_df[~candidate_set_df['ltable_id'].isin(merged_df['ltable_id'])&(~candidate_set_df['rtable_id'].isin(merged_df['rtable_id']))]
 
     left_num_tuples = len(left_df)
     right_num_tuples = len(right_df)
     statistics_dict = {
         "left_num_tuples": left_num_tuples,
         "right_num_tuples": right_num_tuples,
-        "recall": len(merged_df) / len(golden_df),
+        "candidate_set_length": len(candidate_set_df),
+        "golden_set_length": len(golden_df),
+        "merged_set_length": len(merged_df),
+        "false_positives_length": len(false_pos),
+        "precision": len(merged_df) / (len(merged_df) + len(false_pos)) if len(golden_df) > 0 else "N/A",
+        "recall": len(merged_df) / len(golden_df) if len(golden_df) > 0 else "N/A",
         "cssr": len(candidate_set_df) / (left_num_tuples * right_num_tuples)
         }
 
     return statistics_dict
+
+def compute_join_percentage(candidate_set_df, left_df, right_df):
+
+    THRESHOLD = 20
+
+    left_num_tuples = len(left_df)
+    right_num_tuples = len(right_df)
+
+    left_percent_join = 100 * round(candidate_set_df['ltable_id'].unique().shape[0] / left_num_tuples, 3)
+    right_percent_join = 100 * round(candidate_set_df['rtable_id'].unique().shape[0] / right_num_tuples, 3)
+    total_percent_join = 100 * round((candidate_set_df['ltable_id'].unique().shape[0] + candidate_set_df['rtable_id'].unique().shape[0]) / (left_num_tuples + right_num_tuples), 3)
+
+    statistics_dict = {
+        "left_num_tuples": left_num_tuples,
+        "right_num_tuples": right_num_tuples,
+        "candidate_set_length": len(candidate_set_df),
+        "left_percent_join": f"{left_percent_join}%",
+        "right_percent_join": f"{right_percent_join}%",
+        "right_percent_join": f"{right_percent_join}%",
+        "total_percent_join": f"{total_percent_join}%",
+        "prediction": "JOIN" if max(left_percent_join, right_percent_join) > THRESHOLD else "NO JOIN", 
+        "cssr": len(candidate_set_df) / (left_num_tuples * right_num_tuples)
+        }
+
+    return statistics_dict
+
 
 
 #This function is useful when you download the preprocessed data from DeepMatcher dataset

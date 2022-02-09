@@ -43,11 +43,44 @@ class ExactTopKVectorPairing(ABCVectorPairing):
         # top-K neighbors in the indexing matrix 
         all_pair_cosine_similarity_matrix = 1 - distance.cdist(embedding_matrix_for_querying, self.embedding_matrix_for_indexing, metric="cosine")
         #-all_pair_cosine_similarity_matrix is needed to get the max.. use all_pair_cosine_similarity_matrix for min
+        print(all_pair_cosine_similarity_matrix)
+        print(all_pair_cosine_similarity_matrix.shape)
+        print(type(all_pair_cosine_similarity_matrix))
         topK_indices_each_row = np.argsort(-all_pair_cosine_similarity_matrix)[:, :K]
+        print(topK_indices_each_row)
+        print(topK_indices_each_row.shape)
+        print(type(topK_indices_each_row))
         #you can get the corresponding simlarities via all_pair_cosine_similarity_matrix[index, topK_indices_each_row[index]]
     
         return topK_indices_each_row
+
+# Cosine similarity threshold strategy
+class ThresholdVectorPairing(ABCVectorPairing):
+    def __init__(self, threshold=None):
+        super().__init__()
+        self.threshold = threshold
     
+    #Input is an embedding matrix: #tuples x #dimension
+    def index(self, embedding_matrix_for_indexing):
+        self.embedding_matrix_for_indexing = embedding_matrix_for_indexing
+
+    #Input is an embedding matrix: #tuples x #dimension
+    #Output: is a matrix only containing tuples that meet the similarity threshold
+    def query(self, embedding_matrix_for_querying, threshold=None):
+        if threshold is None:
+            threshold = self.threshold
+
+        #Compute the cosine similarity between two matrices with same number of dimensions
+        # E.g. N1 x D and N2 x D, this outputs a similarity matrix of size N1 x N2
+        all_pair_cosine_similarity_matrix = 1 - distance.cdist(embedding_matrix_for_querying, self.embedding_matrix_for_indexing, metric="cosine")
+        # Need to get indeces of similarity scores which exceed threshold
+        print(f"MEAN Similarity: {np.average(all_pair_cosine_similarity_matrix)}")
+        print(f"MEDIAN Similarity: {np.median(all_pair_cosine_similarity_matrix)}")
+        print(f"MIN Similarity: {np.min(all_pair_cosine_similarity_matrix)}")
+        print(f"MAX Similarity: {np.max(all_pair_cosine_similarity_matrix)}")
+        valid_indices = np.where(all_pair_cosine_similarity_matrix > self.threshold)
+        return valid_indices
+        
 
 
 
