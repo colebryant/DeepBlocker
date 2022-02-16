@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import pprint
+from scipy.spatial import distance
 
 from deep_blocker import DeepBlocker
 from tuple_embedding_models import  AutoEncoderTupleEmbedding, CTTTupleEmbedding, HybridTupleEmbedding
@@ -15,8 +16,6 @@ def do_blocking(folder_root, left_table_fname, right_table_fname, tuple_embeddin
     folder_root = Path(folder_root)
     left_df = pd.read_csv(folder_root / left_table_fname)
     right_df = pd.read_csv(folder_root / right_table_fname)
-    # left_df = pd.read_csv(folder_root / left_table_fname, index_col='unique_id_number')
-    # right_df = pd.read_csv(folder_root / right_table_fname, index_col='unique_id_number')
 
     db = DeepBlocker(tuple_embedding_model, vector_pairing_model)
     candidate_set_df = db.block_datasets(left_df, right_df)
@@ -29,6 +28,39 @@ def do_blocking(folder_root, left_table_fname, right_table_fname, tuple_embeddin
     return statistics_dict
 
 
+def baseline_one(folder_root, left_table_fname, right_table_fname, tuple_embedding_model):
+    """ Method which uses existing code to produce tuple embeddings, and then runs a cosine similarity on all possible pairs. Thresholds the similarity to determine valid pairs
+    """
+    # topK_vector_pairing_model = ExactTopKVectorPairing(K=10)
+    vector_pairing_model = ThresholdVectorPairing(threshold=0.75)
+    # Removed cols_to_block
+    statistics_dict = do_blocking(folder_root, left_table_fname, right_table_fname, tuple_embedding_model, vector_pairing_model)
+    pprint.pprint(statistics_dict, sort_dicts=False)
+
+
+def baseline_three(folder_root, left_table_fname, right_table_fname, tuple_embedding_model):
+    """ Method which uses existing code to produce tuple embeddings, and then creates an average embedding for each table. Finally, runs cosine similarity on the two vectors and thresholds to determine join prediction
+    """
+
+    folder_root = Path(folder_root)
+    left_df = pd.read_csv(folder_root / left_table_fname)
+    right_df = pd.read_csv(folder_root / right_table_fname)
+
+    # Get tuple embeddings
+    db = DeepBlocker(tuple_embedding_model, None)
+    db.get_table_embeddings(left_df, right_df)
+
+    # Compute average vector embedding for each table
+    avg_left = np.average(db.left_tuple_embeddings, axis=0) 
+    avg_right = np.average(db.right_tuple_embeddings, axis=0) 
+    # print(avg_left)
+    # print(avg_right)
+
+    cosine_similarity = 1 - distance.cdist(avg_left.reshape(1,-1), avg_right.reshape(1,-1), metric="cosine")
+    print(cosine_similarity)
+
+
+
 if __name__ == "__main__":
     # folder_root = "data/Structured/Amazon-Google"
     # left_table_fname, right_table_fname = "tableA.csv", "tableB.csv"
@@ -37,23 +69,18 @@ if __name__ == "__main__":
     folder_root = "data/Structured/nyc_cleaned"
     left_table_fname = sys.argv[1] + ".csv"
     right_table_fname = sys.argv[2] + ".csv"
+    method_choice = sys.argv[3]
 
     print("using AutoEncoder embedding")
     tuple_embedding_model = AutoEncoderTupleEmbedding()
-    # topK_vector_pairing_model = ExactTopKVectorPairing(K=10)
-    topK_vector_pairing_model = ThresholdVectorPairing(threshold=0.8)
-    # Removed cols_to_block
-    statistics_dict = do_blocking(folder_root, left_table_fname, right_table_fname, tuple_embedding_model, topK_vector_pairing_model)
-    pprint.pprint(statistics_dict, sort_dicts=False)
-
     # print("using CTT embedding")
     # tuple_embedding_model = CTTTupleEmbedding()
-    # topK_vector_pairing_model = ExactTopKVectorPairing(K=50)
-    # statistics_dict = do_blocking(folder_root, left_table_fname, right_table_fname, cols_to_block, tuple_embedding_model, topK_vector_pairing_model)
-    # print(statistics_dict)
-    
     # print("using Hybrid embedding")
     # tuple_embedding_model = HybridTupleEmbedding()
-    # topK_vector_pairing_model = ExactTopKVectorPairing(K=50)
-    # statistics_dict = do_blocking(folder_root, left_table_fname, right_table_fname, cols_to_block, tuple_embedding_model, topK_vector_pairing_model)
-    # print(statistics_dict)
+
+    if method_choice == "1":
+        baseline_one(folder_root, left_table_fname, right_table_fname, tuple_embedding_model)
+    else:
+        baseline_three(folder_root, left_table_fname, right_table_fname, tuple_embedding_model)
+
+   

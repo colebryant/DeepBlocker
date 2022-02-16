@@ -78,3 +78,18 @@ class DeepBlocker:
         self.candidate_set_df = blocking_utils.thresholded_pairs_to_candidate_set(thresholded_pairs)
 
         return self.candidate_set_df
+
+
+    def get_table_embeddings(self, left_df, right_df):
+        self.left_df = left_df
+        self.right_df = right_df
+        self.preprocess_datasets()
+
+        print("Performing pre-processing for tuple embeddings ")
+        all_merged_text = pd.concat([self.left_df["_merged_text"], self.right_df["_merged_text"]], ignore_index=True)
+        self.tuple_embedding_model.preprocess(all_merged_text)
+
+        print("Obtaining tuple embeddings for left table")
+        self.left_tuple_embeddings = self.tuple_embedding_model.get_tuple_embedding(self.left_df["_merged_text"])
+        print("Obtaining tuple embeddings for right table")
+        self.right_tuple_embeddings = self.tuple_embedding_model.get_tuple_embedding(self.right_df["_merged_text"])
