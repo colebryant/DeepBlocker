@@ -6,7 +6,7 @@ import sys
 import numpy as np
 from configurations import *
 
-model = fasttext.load_model(FASTTEXT_EMBEDDIG_PATH)
+model = None
 
 #Return sentence embeddings for a list of words
 def get_word_embedding(list_of_words):
@@ -42,7 +42,7 @@ def make_prediction_df(table_names, table_files):
     dfa = dfa.astype(str)
     dfb = dfb.astype(str)
     if len(dfb) > 5000:
-    	return None
+        return None
     print(len(dfa))
     print(len(dfb))
     cs_list,column_compare_combos = generate_column_similarity(dfa,dfb)
@@ -62,15 +62,15 @@ def compute_blocking_statistics(table_names,candidate_set_df, golden_df,left_df,
     # Added to calculate total false positives
     false_pos = candidate_set_df[~candidate_set_df['ltable_id'].isin(merged_df['ltable_id'])&(~candidate_set_df['rtable_id'].isin(merged_df['rtable_id']))]
     if len(golden_df) > 0 and (len(merged_df) + len(false_pos)) > 0:
-    	fp = float(len(merged_df)) / (len(merged_df) + len(false_pos))
+        fp = float(len(merged_df)) / (len(merged_df) + len(false_pos))
     else:
-    	fp = "N/A"
+        fp = "N/A"
 
     left_num_tuples = len(left_df)
     right_num_tuples = len(right_df)
     statistics_dict = {
-    	"left_table": table_names[0],
-    	"right_table": table_names[1],
+        "left_table": table_names[0],
+        "right_table": table_names[1],
         "left_num_tuples": left_num_tuples,
         "right_num_tuples": right_num_tuples,
         "candidate_set_length": len(candidate_set_df),
@@ -85,49 +85,50 @@ def compute_blocking_statistics(table_names,candidate_set_df, golden_df,left_df,
     return statistics_dict
 
 def main(args):
-	# usage: python baseline_fasttext.py kvhd-5fmu 2j8u-wtju
-	# args = sys.argv[1:]
+    # usage: python baseline_fasttext.py kvhd-5fmu 2j8u-wtju
+    # args = sys.argv[1:]
 
-	# table_names = ('kvhd-5fmu','2j8u-wtju')
-	# table_files = ('nyc_cleaned/kvhd-5fmu.csv','nyc_cleaned/2j8u-wtju.csv')
+    # table_names = ('kvhd-5fmu','2j8u-wtju')
+    # table_files = ('nyc_cleaned/kvhd-5fmu.csv','nyc_cleaned/2j8u-wtju.csv')
 
+    model = fasttext.load_model(FASTTEXT_EMBEDDIG_PATH)
+    
+    output_file = 'nyc_output/'+ args[0] + '-output.txt'
+    with open(output_file) as f:
+        lines = f.readlines()
+    line_df = pd.DataFrame(lines,columns=['full'])
+    line_df = line_df['full'].str.split("JOIN", n = 1, expand = True)
+    line_df = line_df.replace('\n',' ', regex=True)
+    line_df.columns = ['ltable_id','rtable_id']
 
-	output_file = 'nyc_output/'+ args[0] + '-output.txt'
-	with open(output_file) as f:
-	    lines = f.readlines()
-	line_df = pd.DataFrame(lines,columns=['full'])
-	line_df = line_df['full'].str.split("JOIN", n = 1, expand = True)
-	line_df = line_df.replace('\n',' ', regex=True)
-	line_df.columns = ['ltable_id','rtable_id']
+    if len(args )== 2:
+        joining_tables = [args[1]]
+    else:
+        joining_tables = line_df['rtable_id'].str.split('.').apply(lambda x: x[0].strip()).unique()
 
-	if len(args )== 2:
-		joining_tables = [args[1]]
-	else:
-		joining_tables = line_df['rtable_id'].str.split('.').apply(lambda x: x[0].strip()).unique()
+    table_file1 = 'data/Structured/nyc_cleaned/' + args[0] + '.csv'
+    stats_list = []
+    for table in joining_tables:
+        print(table)
+        table_file2 = 'data/Structured/nyc_cleaned/' + table + '.csv'
+        table_names = (args[0],table)
+        table_files = (table_file1,table_file2)
 
-	table_file1 = 'data/Structured/nyc_cleaned/' + args[0] + '.csv'
-	stats_list = []
-	for table in joining_tables:
-		print(table)
-		table_file2 = 'data/Structured/nyc_cleaned/' + table + '.csv'
-		table_names = (args[0],table)
-		table_files = (table_file1,table_file2)
+        print("Getting cosine_similarity")
+        test = make_prediction_df(table_names, table_files)
+        if test is None:
+            continue
+        print("Compute stats")
+        candidate_set_df = test[test['score']> 0.95] #change to top 10? 
+        golden_df = line_df[line_df['ltable_id'].str.contains(table_names[0])]
+        golden_df = line_df[line_df['rtable_id'].str.contains(table_names[1])]
+        golden_df.ltable_id = golden_df.ltable_id.str.strip()
+        golden_df.rtable_id = golden_df.rtable_id.str.strip()
+        candidate_set_df['ltable_id'] = candidate_set_df['ltable_id'].astype('str')
+        golden_df['ltable_id'] = golden_df['ltable_id'].astype('str')
+        stats = compute_blocking_statistics(table_names,candidate_set_df, golden_df,test['ltable_id'].unique(), test['rtable_id'].unique())
+        print(stats)
+        stats_list.append(stats)
 
-		print("Getting cosine_similarity")
-		test = make_prediction_df(table_names, table_files)
-		if test is None:
-			continue
-		print("Compute stats")
-		candidate_set_df = test[test['score']> 0.95] #change to top 10? 
-		golden_df = line_df[line_df['ltable_id'].str.contains(table_names[0])]
-		golden_df = line_df[line_df['rtable_id'].str.contains(table_names[1])]
-		golden_df.ltable_id = golden_df.ltable_id.str.strip()
-		golden_df.rtable_id = golden_df.rtable_id.str.strip()
-		candidate_set_df['ltable_id'] = candidate_set_df['ltable_id'].astype('str')
-		golden_df['ltable_id'] = golden_df['ltable_id'].astype('str')
-		stats = compute_blocking_statistics(table_names,candidate_set_df, golden_df,test['ltable_id'].unique(), test['rtable_id'].unique())
-		print(stats)
-		stats_list.append(stats)
-
-	print(stats_list)
+    print(stats_list)
 # main()

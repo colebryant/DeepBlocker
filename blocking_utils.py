@@ -34,7 +34,7 @@ def compute_blocking_statistics(candidate_set_df, golden_df, left_df, right_df):
 
     merged_df = pd.merge(candidate_set_df, golden_df, on=['ltable_id', 'rtable_id'])
     # Added to calculate total false positives
-    false_pos = candidate_set_df[~candidate_set_df['ltable_id'].isin(merged_df['ltable_id'])&(~candidate_set_df['rtable_id'].isin(merged_df['rtable_id']))]
+    false_pos = candidate_set_df[~candidate_set_df['ltable_id'].isin(merged_df['ltable_id'])|(~candidate_set_df['rtable_id'].isin(merged_df['rtable_id']))]
 
     left_num_tuples = len(left_df)
     right_num_tuples = len(right_df)
@@ -92,7 +92,8 @@ def compute_column_statistics(table_names,candidate_set_df, golden_df,left_df, r
     merged_df = pd.merge(candidate_set_df, golden_df, on=['ltable_id', 'rtable_id'])
     
     # Added to calculate total false positives
-    false_pos = candidate_set_df[~candidate_set_df['ltable_id'].isin(merged_df['ltable_id'])&(~candidate_set_df['rtable_id'].isin(merged_df['rtable_id']))]
+    false_pos = candidate_set_df[~candidate_set_df['ltable_id'].isin(merged_df['ltable_id'])|(~candidate_set_df['rtable_id'].isin(merged_df['rtable_id']))]
+    print(false_pos)
     if len(golden_df) > 0 and (len(merged_df) + len(false_pos)) > 0:
     	fp = float(len(merged_df)) / (len(merged_df) + len(false_pos))
     else:
