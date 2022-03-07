@@ -1,0 +1,59 @@
+5tdj-xqd5.borough JOIN kuxa-tauh.borough
+5tdj-xqd5.borough JOIN 4bew-e6kg.borough
+5tdj-xqd5.borough JOIN tesz-9suw.borough
+5tdj-xqd5.borough JOIN 6bqn-qdwq.work_cms_zone
+5tdj-xqd5.borough JOIN dze7-citg.borough
+5tdj-xqd5.borough JOIN 6m3u-8rbh.upcoming_project_borough_
+5tdj-xqd5.borough JOIN trm8-fqqz.park_borough
+5tdj-xqd5.borough JOIN gyrw-gvqc.park_borough
+5tdj-xqd5.borough JOIN y9si-s7ab.borough
+5tdj-xqd5.borough JOIN 48ka-f6z6.borough86a8-pqby.category JOIN wag2-kf63.feature_category
+86a8-pqby.feature JOIN wag2-kf63.feature
+86a8-pqby.feature JOIN s6dm-mdan.feature
+86a8-pqby.feature JOIN 5mma-5n3h.feature_1e2sz-2mmc.councildist JOIN cuzb-dmcd.wifi_dwn
+e2sz-2mmc.councildist JOIN p937-wjvj.:@computed_region_92fq_4b7q
+e2sz-2mmc.councildist JOIN u553-m549.Council District
+e2sz-2mmc.councildist JOIN adax-9mit.council_district
+e2sz-2mmc.councildist JOIN fdpt-nzk4.swdapps_prog2
+e2sz-2mmc.councildist JOIN fdpt-nzk4.swdseats_prog3
+e2sz-2mmc.councildist JOIN k7nh-aufb.multifamily_home_number_of
+e2sz-2mmc.councildist JOIN 6kcb-9g8d.geseats_prog1
+e2sz-2mmc.councildist JOIN 6kcb-9g8d.mathprof
+e2sz-2mmc.councildist JOIN 6kcb-9g8d.council_districtej3f-9dad.transferred_floor_area JOIN cm6g-t7ye.transferred_ih_floor_area
+ej3f-9dad.transferred_floor_area JOIN tbl_1.f140
+ej3f-9dad.generating_project_id JOIN tbl_1.f139
+ej3f-9dad.generating_project_id JOIN qcru-xhuq.generating_project_id
+ej3f-9dad.generating_project_id JOIN jafx-rvrb.project_id
+ej3f-9dad.transfer_date JOIN 87fx-28ei.disposition_date
+ej3f-9dad.transfer_date JOIN e98g-f8hy.permit_issuance_date
+ej3f-9dad.transfer_date JOIN 3r6b-hsaa.thru_date
+ej3f-9dad.transfer_date JOIN tbl_15.f389
+ej3f-9dad.transfer_date JOIN vq35-j9qm.end_datejuyv-2jek.machine_manufacturer JOIN 
+kvhd-5fmu.program_name JOIN 2j8u-wtju.program_name
+kvhd-5fmu.page_type JOIN 2j8u-wtju.page_type
+kvhd-5fmu.government_agency JOIN hukm-snmq.agency_capital_expenditures_by_purpose
+kvhd-5fmu.government_agency JOIN bxv9-8f4e.agency_name
+2j8u-wtju.unique_id_number JOIN kvhd-5fmu.unique_id_number
+2j8u-wtju.page_type JOIN kvhd-5fmu.page_type
+2j8u-wtju.how_to_apply_or_enroll_in_person JOIN 2j8u-wtju.how_to_apply_summary
+2j8u-wtju.required_documents_summary JOIN kvhd-5fmu.required_documents_summary
+2j8u-wtju.language JOIN a5rk-jemi.survey_languagemyrx-addi.School Name JOIN knq4-3kz9.Location Name
+myrx-addi.School Name JOIN v4se-2t5p.school_name
+myrx-addi.School Name JOIN xsmd-g5j6.School Name
+myrx-addi.School Name JOIN u553-m549.@id
+myrx-addi.School Name JOIN fdpt-nzk4.tophs2
+myrx-addi.School Name JOIN 6kcb-9g8d.tophs1
+myrx-addi.School Name JOIN 8vqd-3345.school_name
+myrx-addi.School Name JOIN fb6n-h22r.School Name
+myrx-addi.School Name JOIN v575-87iz.School Name
+myrx-addi.School Name JOIN 9d6u-jzxb.School Name
+myrx-addi.DBN JOIN 8vqd-3345.dbnrsnd-bbih.brief_program_description JOIN n3p6-zve2.overview_paragraph
+rsnd-bbih.address JOIN m3fi-rt3k.street_address_1_2
+rsnd-bbih.address JOIN rjkp-yttg.empstrname
+rsnd-bbih.address JOIN 9umc-3b2y.organization_address
+rsnd-bbih.address JOIN shpd-5q9m.street_address
+rsnd-bbih.community_council JOIN n9yn-6q3f.ADMINISTRATIVE DISTRICT
+rsnd-bbih.community_council JOIN ew6u-9hb3.jwtr
+rsnd-bbih.community_council JOIN 956m-xy24.community_board
+rsnd-bbih.community_council JOIN 2232-dj5q.total_families
+rsnd-bbih.community_council JOIN tpt8-yikk.schl

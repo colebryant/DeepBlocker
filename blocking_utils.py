@@ -19,6 +19,12 @@ def thresholded_pairs_to_candidate_set(thresholded_pairs):
     candidate_set_df = pd.DataFrame(merged_arr, columns=["ltable_id", "rtable_id"])
     return candidate_set_df
 
+def thresholded_col_pairs_to_candidate_set(thresholded_pairs):
+    # Merge column pair arrays to create DataFrame of candidate pairs
+    merged_arr = np.vstack((thresholded_pairs[0], thresholded_pairs[1])).T
+    candidate_set_df = pd.DataFrame(merged_arr, columns=["ltable_id", "rtable_id"])
+    return candidate_set_df
+
 #This accepts four inputs:
 # data frames for candidate set and ground truth matches
 # left and right data frames
@@ -71,6 +77,47 @@ def compute_join_percentage(candidate_set_df, left_df, right_df):
 
     return statistics_dict
 
+
+def compute_column_statistics(table_names,candidate_set_df, golden_df,left_df, right_df):
+
+    candidate_set_df = candidate_set_df.astype('str')
+
+    candidate_set_df['ltable_id_table'] = candidate_set_df['ltable_id'].apply(lambda x: left_df.columns[int(x)])
+    candidate_set_df['ltable_id_table'] = table_names[0] + '.' + candidate_set_df['ltable_id_table']
+    candidate_set_df['rtable_id_table'] = candidate_set_df['rtable_id'].apply(lambda x: right_df.columns[int(x)])
+    candidate_set_df['rtable_id_table'] = table_names[1] + '.' + candidate_set_df['rtable_id_table']
+
+    candidate_set_df = candidate_set_df[['ltable_id_table','rtable_id_table']].rename(columns={'ltable_id_table':'ltable_id','rtable_id_table':'rtable_id'})
+
+    merged_df = pd.merge(candidate_set_df, golden_df, on=['ltable_id', 'rtable_id'])
+    
+    # Added to calculate total false positives
+    false_pos = candidate_set_df[~candidate_set_df['ltable_id'].isin(merged_df['ltable_id'])&(~candidate_set_df['rtable_id'].isin(merged_df['rtable_id']))]
+    if len(golden_df) > 0 and (len(merged_df) + len(false_pos)) > 0:
+    	fp = float(len(merged_df)) / (len(merged_df) + len(false_pos))
+    else:
+    	fp = "N/A"
+
+    left_num_columns = len(left_df.columns)
+    right_num_columns = len(right_df.columns)
+    statistics_dict = {
+    	"left_table": table_names[0],
+    	"right_table": table_names[1],
+        "left_num_columns": left_num_columns,
+        "right_num_columns": right_num_columns,
+        "candidate_set_length": len(candidate_set_df),
+        "candidate_set": candidate_set_df,
+        "golden_set_length": len(golden_df),
+        "golden_set": golden_df,
+        "merged_set_length": len(merged_df),
+        "merged_set": merged_df,
+        "false_positives_length": len(false_pos),
+        "precision": fp,
+        "recall": float(len(merged_df)) / len(golden_df) if len(golden_df) > 0 else "N/A",
+        "cssr": len(candidate_set_df) / (left_num_columns * right_num_columns)
+        }
+
+    return statistics_dict
 
 
 #This function is useful when you download the preprocessed data from DeepMatcher dataset

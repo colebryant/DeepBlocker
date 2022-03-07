@@ -23,6 +23,20 @@ class NumPy_Dataset(Dataset):
     def __len__(self):
         return len(self.embedding_matrix)
 
+#This is a dataset for loading numpy matrices with labels
+class NumPy_Labelled_Dataset(Dataset):
+    def __init__(self, embedded_tuples, labels):
+        self.embedded_tuples = embedded_tuples
+        self.labels = labels
+
+    def __getitem__(self, index):
+        embedded_tensor = torch.tensor(self.embedded_tuples[index, :]).float()
+        label = torch.tensor(self.labels[index]).float()
+        return embedded_tensor, label
+
+    def __len__(self):
+        return len(self.embedded_tuples)
+
 #This is used for CTT and Hybrid where you want to load L_e, R_e and y_e
 # where L_e and R_e are the numpy matrices for tuple pairs 
 # that are either a perturbation of each other as denoted by y_e
@@ -69,6 +83,31 @@ class AutoEncoder(nn.Module):
             return self.encoder(t1).detach().numpy()
 
 
+class AutoEncoderAdjusted(nn.Module):
+    #This model is assumed to be layered
+    def __init__(self, input_dimension, output_dimension, hidden_dimensions):
+        super(AutoEncoderAdjusted, self).__init__()
+        self.encoder = nn.Sequential(
+            nn.Linear(input_dimension, hidden_dimensions[1]),
+            nn.ReLU(True),
+            nn.Linear(hidden_dimensions[1], hidden_dimensions[1])
+            )
+        self.decoder = nn.Sequential(
+            nn.Linear(hidden_dimensions[1], hidden_dimensions[0]),
+            nn.ReLU(True),
+            nn.Linear(hidden_dimensions[0], output_dimension)
+            )
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.decoder(x)
+        return x
+ 
+    def get_tuple_embedding(self, t1):
+        with torch.no_grad():
+            return self.encoder(t1).detach().numpy()
+
+
 class AutoEncoderTrainer:
     def __init__(self, input_dimension, hidden_dimensions):
         super(AutoEncoderTrainer, self).__init__()
@@ -98,7 +137,7 @@ class AutoEncoderTrainer:
                 loss.backward()
                 train_loss += loss.item()
                 optimizer.step()
-            #print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / num_tuples))
+            # print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / num_tuples))
         
         self.model.eval()
         
@@ -111,6 +150,57 @@ class AutoEncoderTrainer:
         self.model = AutoEncoder(self.input_dimension, self.hidden_dimensions)
         self.model.load_state_dict(torch.load(input_file_name))
         self.model.eval()
+
+
+class AutoEncoderTrainerAdjusted:
+    """
+    Adjusted version of trainer - train to produce embedding based on actual column value.
+    Input is tuple embedding, label is actual column value
+    """
+    def __init__(self, input_dimension, output_dimension, hidden_dimensions):
+        super(AutoEncoderTrainerAdjusted, self).__init__()
+        self.input_dimension = input_dimension
+        self.output_dimension = output_dimension
+        self.hidden_dimensions = hidden_dimensions
+
+    def train(self, embedded_tuples, embedding_matrix, num_epochs=NUM_EPOCHS, batch_size=BATCH_SIZE):
+        self.model = AutoEncoderAdjusted(self.input_dimension, self.output_dimension, self.hidden_dimensions)
+        self.device = get_device()
+        self.model.to(self.device)
+        num_tuples = len(embedding_matrix)
+
+        train_dataloader = DataLoader(dataset=NumPy_Labelled_Dataset(embedded_tuples, embedding_matrix), batch_size=batch_size, shuffle=True)
+
+        loss_function = nn.MSELoss()
+        optimizer = torch.optim.Adam(self.model.parameters(), lr = LEARNING_RATE)
+
+        self.model.train()
+
+        for epoch in range(num_epochs):
+            train_loss = 0
+            for batch_idx, (data, label) in enumerate(train_dataloader):
+                data = data.to(self.device)
+                label = label.to(self.device)
+                optimizer.zero_grad()
+                output = self.model(data)
+                loss = loss_function(output, label)
+                loss.backward()
+                train_loss += loss.item()
+                optimizer.step()
+            # print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / num_tuples))
+        
+        self.model.eval()
+        
+        return self.model
+    
+    def save_model(self, output_file_name):
+        torch.save(self.model.state_dict(), output_file_name)
+
+    def load_model(self, input_file_name):
+        self.model = AutoEncoder(self.input_dimension, self.hidden_dimensions)
+        self.model.load_state_dict(torch.load(input_file_name))
+        self.model.eval()
+        
         
 class CTTModel(nn.Module):
     #This model is assumed to be layered

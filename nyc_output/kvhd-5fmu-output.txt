@@ -1,0 +1,10 @@
+kvhd-5fmu.unique_id_number JOIN 2j8u-wtju.unique_id_number
+kvhd-5fmu.program_name JOIN 2j8u-wtju.program_name
+kvhd-5fmu.page_type JOIN 2j8u-wtju.page_type
+kvhd-5fmu.government_agency JOIN hukm-snmq.agency_capital_expenditures_by_purpose
+kvhd-5fmu.government_agency JOIN bxv9-8f4e.agency_name
+2j8u-wtju.unique_id_number JOIN kvhd-5fmu.unique_id_number
+2j8u-wtju.page_type JOIN kvhd-5fmu.page_type
+2j8u-wtju.how_to_apply_or_enroll_in_person JOIN 2j8u-wtju.how_to_apply_summary
+2j8u-wtju.required_documents_summary JOIN kvhd-5fmu.required_documents_summary
+2j8u-wtju.language JOIN a5rk-jemi.survey_language

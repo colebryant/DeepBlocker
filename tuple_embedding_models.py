@@ -70,9 +70,6 @@ class AverageEmbedding(ABCTupleEmbedding):
         return [self.word_embedding_model.get_word_vector(word) for word in list_of_words]
 
 
-
-        
-
 class SIFEmbedding(ABCTupleEmbedding):
     #sif_weighting_param is a parameter in the SIF weighting scheme, usually in the range [3e-5, 3e-3]
     # the SIF paper set the default value to 1e-3
@@ -85,7 +82,6 @@ class SIFEmbedding(ABCTupleEmbedding):
 
         self.word_embedding_model = fasttext.load_model(FASTTEXT_EMBEDDIG_PATH)
         self.dimension_size = EMB_DIMENSION_SIZE
-
         self.tokenizer = get_tokenizer("basic_english")
 
         #Word to frequency counter
@@ -99,7 +95,6 @@ class SIFEmbedding(ABCTupleEmbedding):
         self.min_freq = min_freq
         
         self.token_weight_dict = {}
-
 
 
     #There is no pre processing needed for Average Embedding
@@ -144,7 +139,7 @@ class SIFEmbedding(ABCTupleEmbedding):
     def get_word_embedding(self, list_of_words):
         return [self.word_embedding_model.get_word_vector(word) for word in list_of_words] 
 
-
+    
 class AutoEncoderTupleEmbedding(ABCTupleEmbedding):
     def __init__(self, hidden_dimensions=(2*AE_EMB_DIMENSION_SIZE, AE_EMB_DIMENSION_SIZE)):
         super().__init__()
@@ -177,6 +172,48 @@ class AutoEncoderTupleEmbedding(ABCTupleEmbedding):
         embedding_matrix = torch.tensor(self.sif_embedding_model.get_tuple_embedding(list_of_words)).float()
         return self.autoencoder_model.get_tuple_embedding(embedding_matrix)
 
+
+
+class AutoEncoderTupleEmbeddingAdjusted(ABCTupleEmbedding):
+    """
+    Adjusted version of Autoencoder - train embedding based on actual column value
+    Takes in already produced tuple embeddings, produces embeddings for held out column values
+    """
+    def __init__(self, hidden_dimensions=(2*AE_EMB_DIMENSION_SIZE, AE_EMB_DIMENSION_SIZE)):
+        super().__init__()
+        self.input_dimension = AE_EMB_DIMENSION_SIZE
+        self.output_dimension = EMB_DIMENSION_SIZE
+        self.hidden_dimensions = hidden_dimensions
+        self.sif_embedding_model = SIFEmbedding()
+
+
+    #This function is used as a preprocessing step 
+    # this could be used to compute frequencies, train a DL model etc
+    def preprocess(self, embedded_tuples, column_tuples):
+        print("Training AutoEncoder model")
+        self.sif_embedding_model.preprocess(column_tuples)
+
+        # print(column_tuples)
+        embedding_matrix = self.sif_embedding_model.get_tuple_embedding(column_tuples)
+        trainer = dl_models.AutoEncoderTrainerAdjusted(self.input_dimension, self.output_dimension, self.hidden_dimensions)
+        self.autoencoder_model = trainer.train(embedded_tuples, embedding_matrix, num_epochs=NUM_EPOCHS, batch_size=BATCH_SIZE)
+ 
+
+    #This function computes the tuple embedding.
+    # Given a list of strings, it returns a list of tuple embeddings
+    # each tuple embedding is 1D numpy ndarray
+    def get_tuple_embedding(self, tuple_embeddings):
+        # embedding_matrix = torch.tensor(self.sif_embedding_model.get_tuple_embedding(list_of_tuples)).float()
+        return self.autoencoder_model.get_tuple_embedding(torch.tensor(tuple_embeddings))
+        
+
+
+    #This function sends a list of words and outputs a list of word embeddings
+    def get_word_embedding(self, list_of_words):
+        embedding_matrix = torch.tensor(self.sif_embedding_model.get_tuple_embedding(list_of_words)).float()
+        return self.autoencoder_model.get_tuple_embedding(embedding_matrix)
+
+
 #This function is used by both CTT and Hybrid  - so it is put outside of any class
 #It takes a list of tuple strings and outputs three lists (T, T', L)
 # t_i \in T and t'_i \in T' are (potentially perturbed) tuples 
@@ -184,7 +221,7 @@ class AutoEncoderTupleEmbedding(ABCTupleEmbedding):
 # for each tuple t in list_of_tuples, 
 # we generate synth_tuples_per_tuple positive tuple pairs
 # and synth_tuples_per_tuple * pos_to_neg_ratio negative tuple pairs
-def generate_synthetic_training_data(list_of_tuples, synth_tuples_per_tuple=5, 
+def generate_synthetic_training_data(list_of_tuples, synth_tuples_per_tuple, 
         pos_to_neg_ratio=1, max_perturbation=0.4):
     num_positives_per_tuple = synth_tuples_per_tuple
     num_negatives_per_tuple = synth_tuples_per_tuple * pos_to_neg_ratio
@@ -235,7 +272,7 @@ def generate_synthetic_training_data(list_of_tuples, synth_tuples_per_tuple=5,
 
 class CTTTupleEmbedding(ABCTupleEmbedding):
     def __init__(self, hidden_dimensions=(2*AE_EMB_DIMENSION_SIZE, AE_EMB_DIMENSION_SIZE),
-            synth_tuples_per_tuple=5, pos_to_neg_ratio=1, max_perturbation=0.4):
+            synth_tuples_per_tuple=10, pos_to_neg_ratio=1, max_perturbation=0.4):
         super().__init__()
         self.input_dimension = EMB_DIMENSION_SIZE
         self.hidden_dimensions = hidden_dimensions

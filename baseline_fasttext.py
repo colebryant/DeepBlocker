@@ -11,8 +11,6 @@ model = fasttext.load_model(FASTTEXT_EMBEDDIG_PATH)
 #Return sentence embeddings for a list of words
 def get_word_embedding(list_of_words):
 
-    for word in list_of_words:
-        print(word)
     return [model.get_sentence_vector(word.replace("\n"," ")) for word in list_of_words]
 
 def cos_sim(column1, column2):
@@ -86,9 +84,9 @@ def compute_blocking_statistics(table_names,candidate_set_df, golden_df,left_df,
 
     return statistics_dict
 
-def main():
+def main(args):
 	# usage: python baseline_fasttext.py kvhd-5fmu 2j8u-wtju
-	args = sys.argv[1:]
+	# args = sys.argv[1:]
 
 	# table_names = ('kvhd-5fmu','2j8u-wtju')
 	# table_files = ('nyc_cleaned/kvhd-5fmu.csv','nyc_cleaned/2j8u-wtju.csv')
@@ -132,4 +130,4 @@ def main():
 		stats_list.append(stats)
 
 	print(stats_list)
-main()
+# main()
