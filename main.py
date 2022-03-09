@@ -2,6 +2,7 @@
 import sys
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 from pathlib import Path
 import pprint
 from scipy.spatial import distance
@@ -12,6 +13,8 @@ from vector_pairing_models import ExactTopKVectorPairing, ThresholdVectorPairing
 import blocking_utils
 import baseline_fasttext
 import pickle
+import fasttext 
+from configurations import *
 
 
 def do_blocking(folder_root, left_table_fname, right_table_fname, tuple_embedding_model, vector_pairing_model):
@@ -33,7 +36,7 @@ def do_blocking_cols(folder_root, left_table_fname, right_table_fname, tuple_emb
     db = DeepBlocker(tuple_embedding_model, vector_pairing_model)
     candidate_set_df = db.block_cols(left_df, right_df)
 
-    golden_df = get_golden_set(left_table_fname,right_table_fname)
+    golden_df = get_golden_set(left_table_fname,right_table_fname, folder_root)
 
     statistics_dict = blocking_utils.compute_column_statistics((left_table_fname.split('.')[0],right_table_fname.split('.')[0]), candidate_set_df, golden_df, left_df, right_df)
 
@@ -81,7 +84,7 @@ def column_embedding_method(folder_root, left_table_fname, right_table_fname, tu
     """ Method which generates tuple embeddings for each column using self-supervision   
     """
 
-    vector_pairing_model = ThresholdVectorPairing(threshold=0.95)
+    vector_pairing_model = ThresholdVectorPairing(threshold=AUTOENCODER_THRESHOLD)
     statistics_dict = do_blocking_cols(folder_root, left_table_fname, right_table_fname, tuple_embedding_model, vector_pairing_model)
     pprint.pprint(statistics_dict, sort_dicts=False)
     return statistics_dict
@@ -105,6 +108,7 @@ def column_embedding_method_loop():
         dataset_pairs_dict[dataset] = list(filtered_df['rtable_id'].apply(lambda x: x.split('.')[0]).unique())
 
 
+    stats_dicts = []
     agg_stats = {
         "num_experiments": 0,
         "golden_set_length": 0,
@@ -113,19 +117,28 @@ def column_embedding_method_loop():
         "false_positives_length": 0
     }
     folder_root = "data/Structured/nyc_cleaned"
+    # Pre-load the word embedding model
+    word_embedding_model = fasttext.load_model(FASTTEXT_EMBEDDIG_PATH)
     # Run model on each of the dataset pairs and aggregate results
     for left_dataset in dataset_pairs_dict.keys():
         for right_dataset in dataset_pairs_dict[left_dataset]:
 
             # Skip if either dataframe is too small
-            if len(pd.read_csv(folder_root + "/" + left_dataset.strip() + ".csv")) < 10 or len(pd.read_csv(folder_root + "/" + right_dataset.strip() + ".csv")) < 10:
-                continue
+            # if len(pd.read_csv(folder_root + "/" + left_dataset.strip() + ".csv")) < TUPLE_SAMPLE_SIZE or len(pd.read_csv(folder_root + "/" + right_dataset.strip() + ".csv")) < TUPLE_SAMPLE_SIZE:
+            #     continue
+
+            # Check if all values in a dataset are numeric. If so, then skip (fixes bug)
+            if IGNORE_NUMERIC_COLS:
+                left_df = pd.read_csv(folder_root + "/" + left_dataset.strip() + ".csv")
+                right_df = pd.read_csv(folder_root + "/" + right_dataset.strip() + ".csv")
+                if len(left_df.select_dtypes(include='number').columns) == len(left_df.columns) or len(right_df.select_dtypes(include='number').columns) == len(right_df.columns):
+                    continue
 
             print("")
             print(f"Run model on {left_dataset.strip()} and {right_dataset.strip()}")
-            # tuple_embedding_model = CTTTupleEmbedding(synth_tuples_per_tuple=100)
-            tuple_embedding_model = AutoEncoderTupleEmbedding()
+            tuple_embedding_model = AutoEncoderTupleEmbedding(word_embedding_model=word_embedding_model)
             statistics_dict = column_embedding_method(folder_root, left_dataset.strip() + ".csv", right_dataset.strip() + ".csv", tuple_embedding_model)
+            stats_dicts.append(statistics_dict)
 
             agg_stats["num_experiments"] += 1
             agg_stats["golden_set_length"] += statistics_dict["golden_set_length"]
@@ -133,9 +146,8 @@ def column_embedding_method_loop():
             agg_stats["merged_set_length"] += statistics_dict["merged_set_length"]
             agg_stats["false_positives_length"] += statistics_dict["false_positives_length"]
 
-            with open("indv_output.pickle", "wb") as f:
-                pickle.dump(statistics_dict, f)
-            # pprint.pprint(statistics_dict, sort_dicts=False)
+    with open("indv_output.pickle", "wb") as f:
+        pickle.dump(stats_dicts, f)
 
     # Compute aggregated statistics
     agg_stats["recall"] = float(agg_stats["merged_set_length"]) / agg_stats["golden_set_length"]
@@ -146,7 +158,7 @@ def column_embedding_method_loop():
     pprint.pprint(agg_stats, sort_dicts=False)
 
 
-def get_golden_set(left_table_fname, right_table_fname,):
+def get_golden_set(left_table_fname, right_table_fname, folder_root):
     # output_file = 'nyc_output/'+ left_table_fname.split('.')[0] + '-output.txt'
     output_file = 'nyc_output/aurum-output.txt'
     with open(output_file) as f:
@@ -162,6 +174,21 @@ def get_golden_set(left_table_fname, right_table_fname,):
 
     golden_df['ltable_id'] = golden_df['ltable_id'].astype('str')
 
+    if IGNORE_NUMERIC_COLS:
+        # Drop rows from golden set which have numeric columns in left dataset
+        def filter_fn(row):
+            left_value = row['ltable_id']
+            column = left_value.split('.')[-1]
+            df = pd.read_csv('data/Structured/nyc_cleaned/' + left_table_fname)
+            if is_numeric_dtype(df[column]):
+                return False
+            else:
+                return True
+
+        golden_df = golden_df[golden_df.apply(filter_fn, axis=1)]
+
+
+    
     return golden_df
 
 

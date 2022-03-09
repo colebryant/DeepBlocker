@@ -19,12 +19,6 @@ def thresholded_pairs_to_candidate_set(thresholded_pairs):
     candidate_set_df = pd.DataFrame(merged_arr, columns=["ltable_id", "rtable_id"])
     return candidate_set_df
 
-def thresholded_col_pairs_to_candidate_set(thresholded_pairs):
-    # Merge column pair arrays to create DataFrame of candidate pairs
-    merged_arr = np.vstack((thresholded_pairs[0], thresholded_pairs[1])).T
-    candidate_set_df = pd.DataFrame(merged_arr, columns=["ltable_id", "rtable_id"])
-    return candidate_set_df
-
 #This accepts four inputs:
 # data frames for candidate set and ground truth matches
 # left and right data frames
@@ -93,7 +87,6 @@ def compute_column_statistics(table_names,candidate_set_df, golden_df,left_df, r
     
     # Added to calculate total false positives
     false_pos = candidate_set_df[~candidate_set_df['ltable_id'].isin(merged_df['ltable_id'])|(~candidate_set_df['rtable_id'].isin(merged_df['rtable_id']))]
-    print(false_pos)
     if len(golden_df) > 0 and (len(merged_df) + len(false_pos)) > 0:
     	fp = float(len(merged_df)) / (len(merged_df) + len(false_pos))
     else:
@@ -113,6 +106,7 @@ def compute_column_statistics(table_names,candidate_set_df, golden_df,left_df, r
         "merged_set_length": len(merged_df),
         "merged_set": merged_df,
         "false_positives_length": len(false_pos),
+        "false_positives": false_pos,
         "precision": fp,
         "recall": float(len(merged_df)) / len(golden_df) if len(golden_df) > 0 else "N/A",
         "cssr": len(candidate_set_df) / (left_num_columns * right_num_columns)

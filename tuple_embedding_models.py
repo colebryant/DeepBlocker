@@ -69,18 +69,20 @@ class AverageEmbedding(ABCTupleEmbedding):
     def get_word_embedding(self, list_of_words):
         return [self.word_embedding_model.get_word_vector(word) for word in list_of_words]
 
-
+# Note: Changed to take in optional loaded word embedding model
 class SIFEmbedding(ABCTupleEmbedding):
     #sif_weighting_param is a parameter in the SIF weighting scheme, usually in the range [3e-5, 3e-3]
     # the SIF paper set the default value to 1e-3
     # remove_pc is a Boolean parameter that controls whether to remove the first principal component or not
     # min_freq: if a word is too infrequent (ie frequency < min_freq), set a SIF weight of 1.0 else apply the formula
     #   The SIF paper applies this formula if the word is not the top-N most frequent
-    def __init__(self, sif_weighting_param=1e-3, remove_pc=True, min_freq=0):
+    def __init__(self, sif_weighting_param=1e-3, remove_pc=True, min_freq=0, word_embedding_model=None):
         super().__init__()
-        print("Loading FastText model")
-
-        self.word_embedding_model = fasttext.load_model(FASTTEXT_EMBEDDIG_PATH)
+        if word_embedding_model is None:
+            print("Loading FastText model")
+            self.word_embedding_model = fasttext.load_model(FASTTEXT_EMBEDDIG_PATH)
+        else:
+            self.word_embedding_model = word_embedding_model
         self.dimension_size = EMB_DIMENSION_SIZE
         self.tokenizer = get_tokenizer("basic_english")
 
@@ -139,13 +141,14 @@ class SIFEmbedding(ABCTupleEmbedding):
     def get_word_embedding(self, list_of_words):
         return [self.word_embedding_model.get_word_vector(word) for word in list_of_words] 
 
-    
+
+# Note: Changed to take in optional loaded word embedding model
 class AutoEncoderTupleEmbedding(ABCTupleEmbedding):
-    def __init__(self, hidden_dimensions=(2*AE_EMB_DIMENSION_SIZE, AE_EMB_DIMENSION_SIZE)):
+    def __init__(self, hidden_dimensions=(2*AE_EMB_DIMENSION_SIZE, AE_EMB_DIMENSION_SIZE), word_embedding_model=None):
         super().__init__()
         self.input_dimension = EMB_DIMENSION_SIZE
         self.hidden_dimensions = hidden_dimensions
-        self.sif_embedding_model = SIFEmbedding()
+        self.sif_embedding_model = SIFEmbedding(word_embedding_model=word_embedding_model)
 
 
     #This function is used as a preprocessing step 

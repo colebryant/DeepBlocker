@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import blocking_utils
+from configurations import *
 
 class DeepBlocker:
     def __init__(self, tuple_embedding_model, vector_pairing_model):
@@ -48,21 +49,32 @@ class DeepBlocker:
 
     
     def preprocess_columns(self):
+
+        if IGNORE_NUMERIC_COLS:
+            # DROP all columns in both tables which are numeric
+            self.left_df = self.left_df.drop(columns=list(self.left_df.select_dtypes(include='number').columns))
+            self.right_df = self.right_df.drop(columns=list(self.right_df.select_dtypes(include='number').columns))
         self.left_df = self.left_df.astype('str')
         self.right_df = self.right_df.astype('str')
         self.left_df.fillna(' ', inplace=True)
         self.right_df.fillna(' ', inplace=True)
+        
+        # n=1 # length of dataset
+        # k = TUPLE_SAMPLE_SIZE #length of tuple
 
-        n=1 # lenght of dataset
-        k = 10 #length of tuple
+        # set sample size to min of dataframe lengths
+        k = min(len(self.left_df), len(self.right_df))
+
         left_list = []
         for cols in self.left_df.columns:
-            left_df_tuple = [self.left_df.sample(k)[cols].T for x in range(0,n)]
+            # left_df_tuple = [self.left_df.sample(k)[cols].T for x in range(0,n)]
+            left_df_tuple = [self.left_df.sample(k)[cols].T]
             left_tuple_list = [','.join(i) for i in left_df_tuple]
             left_list.extend(left_tuple_list)
         right_list = [] 
         for cols in self.right_df.columns:
-            right_df_tuple = [self.right_df.sample(k)[cols].T for x in range(0,n)]
+            # right_df_tuple = [self.right_df.sample(k)[cols].T for x in range(0,n)]
+            right_df_tuple = [self.right_df.sample(k)[cols].T]
             right_df_tuple_list = [','.join(i) for i in right_df_tuple]
             right_list.extend(right_df_tuple_list)
 
