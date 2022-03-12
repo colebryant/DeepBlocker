@@ -6,18 +6,18 @@ If the optional parameters are left empty, the code will run column-similarity e
 
 Usage: `python main.py [left_table] [right_table] [method_choice] [embedding_choice]`
 
-left_table = name of left table from nyc dataset
-right_table = name of right table from nyc dataset
-method_choice = choice of method to run dataset/column join prediction on:
-    1 = baseline method 1
-    2 = baseline method 2
-    3 = baseline method 3
-    4 = column embedding method
-tuple_embedding = choice of tuple embedding model:
-    AE = Autoencoder Embedding
-    CTT = CTT Tuple Embedding
-    Hybrid = Hybrid Embedding
-    * Note: currently only need to specify for baseline models 1 and 3 
+    left_table = name of left table from nyc dataset
+    right_table = name of right table from nyc dataset
+    method_choice = choice of method to run dataset/column join prediction on:
+        1 = baseline method 1
+        2 = baseline method 2
+        3 = baseline method 3
+        4 = column embedding method
+    tuple_embedding = choice of tuple embedding model:
+        AE = Autoencoder Embedding
+        CTT = CTT Tuple Embedding
+        Hybrid = Hybrid Embedding
+        * Note: currently only need to specify for baseline models 1 and 3 
 
 Please see below for the original readme for the deepblocker codebase.
 
