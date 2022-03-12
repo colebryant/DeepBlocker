@@ -4,6 +4,8 @@ Please see below for formal usage. The user can choose to run baseline 1 (row-pa
 
 If the optional parameters are left empty, the code will run column-similarity experiments with autoencoder on the output from Aurum in nyc_output/aurum_output.txt and output the individual experiment statistics and aggregate statistics to pickle files.
 
+Cosine similarity threshold and other variables are set in configurations.py.
+
 Usage: `python main.py [left_table] [right_table] [method_choice] [embedding_choice]`
 
     left_table = name of left table from nyc dataset
