@@ -1,18 +1,23 @@
+## Self-Supervision Based Data Discovery - Experimental Codebase
+
+Please see below for formal usage. The user can choose to run baseline 1 (row-pair similarity), baseline 2 (column-pair similarity, no self-supervision), baseline method 3 (dataset pair similarity), or column-pair similarity with self-supervision on a pair of given tables. Each of the methods will output relevant statistics on the given experiment (baseline method 3 will simply output the cosine similarity between the two tables).
+
+If the optional parameters are left empty, the code will run column-similarity experiments with autoencoder on the output from Aurum in nyc_output/aurum_output.txt.
+
 Usage: `python main.py [left_table] [right_table] [method_choice] [embedding_choice]`
 
-    left_table = name of left table from nyc dataset
-    right_table = name of right table from nyc dataset
-    method_choice = choice of method to run dataset/column join prediction on:
-        1 = baseline method 1
-        2 = baseline method 2
-        3 = baseline method 3
-        4 = column embedding method
-        [empty] = run column embedding method as a loop on aurum output
-    tuple_embedding = choice of tuple embedding model:
-        AE = Autoencoder Embedding
-        CTT = CTT Tuple Embedding
-        Hybrid = Hybrid Embedding
-        * Note: currently only need to specify for baseline models 1 and 3 
+left_table = name of left table from nyc dataset
+right_table = name of right table from nyc dataset
+method_choice = choice of method to run dataset/column join prediction on:
+    1 = baseline method 1
+    2 = baseline method 2
+    3 = baseline method 3
+    4 = column embedding method
+tuple_embedding = choice of tuple embedding model:
+    AE = Autoencoder Embedding
+    CTT = CTT Tuple Embedding
+    Hybrid = Hybrid Embedding
+    * Note: currently only need to specify for baseline models 1 and 3 
 
 
 # ORIGINAL CODEBASE README: DeepBlocker
