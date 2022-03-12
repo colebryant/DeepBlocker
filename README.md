@@ -2,7 +2,7 @@
 
 Please see below for formal usage. The user can choose to run baseline 1 (row-pair similarity), baseline 2 (column-pair similarity, no self-supervision), baseline method 3 (dataset pair similarity), or column-pair similarity with self-supervision on a pair of given tables. Each of the methods will output relevant statistics on the given experiment (baseline method 3 will simply output the cosine similarity between the two tables).
 
-If the optional parameters are left empty, the code will run column-similarity experiments with autoencoder on the output from Aurum in nyc_output/aurum_output.txt.
+If the optional parameters are left empty, the code will run column-similarity experiments with autoencoder on the output from Aurum in nyc_output/aurum_output.txt and output the individual experiment statistics and aggregate statistics to pickle files.
 
 Usage: `python main.py [left_table] [right_table] [method_choice] [embedding_choice]`
 
